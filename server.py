@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# This is a commented version of book code, to make sure I understand it all
 
 import socket, sys
 
@@ -14,8 +15,10 @@ PORT = 1060
 def recv_all(sock, length):
     ''' Receives the first 'length' bytes of a message from 'sock'. '''
     data = ''
+
+    # stop when we've collected 'length' bytes of message
     while len(data) < length:
-        # grab the next 'length' of incoming data
+
         more = sock.recv(length - len(data))
 
         # if we're out of incoming data, we're done, close the socket!
@@ -25,7 +28,7 @@ def recv_all(sock, length):
         # and append this most recent bit to the whole message we've received so far
         data += more
 
-    # and here's your final message!
+        # and here's your final message!
     return data
 
 if sys.argv[1:] == ['server']:
@@ -58,7 +61,7 @@ if sys.argv[1:] == ['server']:
         print 'The incoming sixteen-octet message says', repr(message)
 
         # Send all the data until it's done sending, then close the socket
-        sc.sendall('Farewell, client')
+        sc.sendall('Farewell, client.\n')
         sc.close()
         print 'Reply sent, socket closed'
 
