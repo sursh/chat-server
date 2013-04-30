@@ -27,7 +27,6 @@ def recv_all(sock, length):
     return data
 
 def main():
-
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # TODO: allow more than 1 client to connect at a time
@@ -36,16 +35,14 @@ def main():
     s.listen(1) # TODO: here too
 
     print 'Listening at', s.getsockname()
+    sc, sockname = s.accept()
 
     while True:
-
-        sc, sockname = s.accept()
-        print 'We have accepted a connection from', sockname
-        print 'Socket connects', sc.getsockname(), 'and', sc.getpeername()
+        sc.send('> ')
 
         # TODO accept more than 16 chars
         message = recv_all(sc, 16)
-        print 'The incoming message says', repr(message)
+        print '%s says: %s' % (sc.getpeername(), str(message))
 
         # TODO broadcast new message to all clients
 
