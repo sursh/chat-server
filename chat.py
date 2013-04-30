@@ -2,9 +2,8 @@
 # working on a simple chat client
 
 import socket, sys
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-HOST = sys.argv.pop() if len(sys.argv) == 3 else '127.0.0.1'
+HOST = '127.0.0.1'
 PORT = 1060
 
 # this is a stupid name for this method
@@ -27,7 +26,9 @@ def recv_all(sock, length):
         # and here's your final message!
     return data
 
-if sys.argv[1:] == ['server']:
+def main():
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # TODO: allow more than 1 client to connect at a time
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -50,5 +51,6 @@ if sys.argv[1:] == ['server']:
 
         print 'Still listening at', s.getsockname()
 
-else:
-    print >>sys.stderr, 'Usage: $ %s server [host]' % sys.argv[0]
+if __name__ == '__main__':
+  main()
+
