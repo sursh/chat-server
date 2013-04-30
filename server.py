@@ -19,6 +19,33 @@ def recv_all(sock, length):
 
 
 if sys.argv[1:] == ['server']:
+
     # at the SOL_SOCKET level, set the SO_REUSEADDR flag to a value of 1.
     # this is the maximum number of connections that our server will accept.
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    # bind the socket to the host and port. At this point, OS still doesn't know
+    # if this is an active or passive port
+    s.bind((HOST, PORT))
+
+    # now we've committed - it's a passive port! With a max number of connections of 1
+    s.listen(1)
+
+    while True:
+        print 'Listening at', s.getsockname()
+
+        # sc is a connection object used for send/receive data
+        # sockname is the socket address on the other end of the connection (so, client)
+        sc, sockname = s.accept()
+        print 'We have accepted a connection from', sockname
+        #
+        print 'Socket connects', sc.getsockname(), 'and', sc.getpeername()
+        #
+        message = recv_all(sc, 16)
+        print 'The incoming sixteen-octet message says', repr(message)
+        sc.sendall('Farewell, client')
+        sc.close()
+        print 'Reply sent, socket closed'
+
+else:
+    print >>sys.stderr, 'Usage: $ %s server [host]' % argv[0]
