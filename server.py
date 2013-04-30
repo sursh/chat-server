@@ -1,27 +1,24 @@
 #!/usr/bin/env python
 
-import sys
-import socket
+import socket, sys
 
-s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# create a new, blank socket object. Nothing is assigned about it right now except that it's TCP
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-MAX = 65535
+# Set the hostname if passed in as an argumet, otherwise use localhost
+HOST = sys.argv.pop() if len(sys.argv) == 3 else '127.0.0.1'
+# Use the polestar port, because it's unlikely that you're using it for real
 PORT = 1060
 
+def recv_all(sock, length):
+    pass
+
+
+
+
+
+
 if sys.argv[1:] == ['server']:
-    s.bind(('127.0.0.1', PORT))
-    print "Listening at", s.getsockname()
-    while True:
-        data, address = s.recvfrom(MAX)
-        print 'The client at', address, 'says', repr(data)
-        s.sendto('Your data was %d bytes' % len(data), address)
-
-elif sys.argv[1:] == ['client']:
-    print 'Address before sending:', s.getsockname()
-    s.sendto('This is my message', ('127.0.0.1', PORT))
-    print 'Address after sending', s.getsockname()
-    data, address = s.recvfrom(MAX)
-    print 'The server', address, 'says', repr(data)
-
-else:
-    print >>sys.stderr, 'usage: %s server|client' % sys.argv[0]
+    # at the SOL_SOCKET level, set the SO_REUSEADDR flag to a value of 1.
+    # this is the maximum number of connections that our server will accept.
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
