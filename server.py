@@ -10,19 +10,22 @@ HOST = sys.argv.pop() if len(sys.argv) == 3 else '127.0.0.1'
 # Use the polestar port, because it's unlikely that you're using it for real
 PORT = 1060
 
+# this is a stupid name for this method
 def recv_all(sock, length):
-    ''' Passes messages length bytes at a time into sock. '''
+    ''' Receives the first 'length' bytes of a message from 'sock'. '''
     data = ''
     while len(data) < length:
         # grab the next 'length' of incoming data
         more = sock.recv(length - len(data))
 
-        # if we're out of incoming data, close the socket:
+        # if we're out of incoming data, we're done, close the socket!
         if not more:
             raise EOFError('socket closed %d bytes into a %d-byte message' % (len(data), length))
 
-        # add 'more' to the list of data already sent
+        # and append this most recent bit to the whole message we've received so far
         data += more
+
+    # and here's your final message!
     return data
 
 if sys.argv[1:] == ['server']:
@@ -50,8 +53,7 @@ if sys.argv[1:] == ['server']:
         #  for this particular client
         print 'Socket connects', sc.getsockname(), 'and', sc.getpeername()
 
-        # this is a homebrewed method, defined above
-        #
+        # this is a homebrewed method that reads the first 16 chars of a message
         message = recv_all(sc, 16)
         print 'The incoming sixteen-octet message says', repr(message)
 
