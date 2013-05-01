@@ -22,23 +22,27 @@ def recv_all(sock, length):
     return data
 
 def main():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # TODO: allow more than 1 client to connect at a time
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((HOST, PORT))
-    s.listen(1) # TODO: here too
+        # TODO: allow more than 1 client to connect at a time
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 2)
+        s.bind((HOST, PORT))
+        s.listen(2) # TODO: here too
 
-    print 'Listening at', s.getsockname()
-    sc, sockname = s.accept()
+        print 'Listening for connections at', s.getsockname()
+        sc, sockname = s.accept()
 
-    while True:
-        sc.send('> ') # client's chat prompt
-        message = recv_all(sc, 1000)
-        print '%s says: %s' % (sc.getpeername(), str(message))
+        while True:
+            sc.send('> ') # client's chat prompt
+            message = recv_all(sc, 1000)
+            print '%s says: %s' % (sc.getpeername(), str(message))
 
-        # TODO broadcast new message to all clients
-
+            # TODO broadcast new message to all clients
+    except KeyboardInterrupt:
+        sc.send('!!! Server shutting down.\n')
+        print "\nKthxbai, shutting down servers."
+        sc.close()
 
 if __name__ == '__main__':
   main()
