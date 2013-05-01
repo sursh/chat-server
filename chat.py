@@ -1,29 +1,24 @@
 #!/usr/bin/env python
 # working on a simple chat client
 
+# TODO
+# dejank the readin function
+# add data structure to keep track of users
+
 import socket, sys
 
 HOST = '127.0.0.1'
 PORT = 1060
 
-# this is a stupid name for this method
 def recv_all(sock, length):
     ''' Receives the first 'length' chars of a message from 'sock'. '''
+
     data = ''
-
-    # stop when we've collected 'length' chars of message
-    while len(data) < length:
-
-        more = sock.recv(length - len(data))
-
-        # if we're out of incoming data, we're done, close the socket!
-        if not more:
-            raise EOFError('socket closed %d chars into a %d-char message' % (len(data), length))
-
-        # and append this most recent bit to the whole message we've received so far
-        data += more
-
-        # and here's your final message!
+    more = sock.recv(length)
+    # if we're out of incoming data, we're done, close the socket!
+    if not more:
+        raise EOFError('socket closed %d chars into a %d-char message' % (len(data), length))
+    data += more
     return data
 
 def main():
@@ -38,15 +33,12 @@ def main():
     sc, sockname = s.accept()
 
     while True:
-        sc.send('> ')
-
-        # TODO accept more than 16 chars
-        message = recv_all(sc, 16)
+        sc.send('> ') # client's chat prompt
+        message = recv_all(sc, 1000)
         print '%s says: %s' % (sc.getpeername(), str(message))
 
         # TODO broadcast new message to all clients
 
-        print 'Still listening at', s.getsockname()
 
 if __name__ == '__main__':
   main()
