@@ -6,9 +6,12 @@ TODO
 [x] implement master queue and boilerplate for sender method
 [x] use child threads instead of objects
 [x] get client messages onto the queue and just print out incoming messages
-[ ] implement message sending to all clients except sender
+[x] implement message sending to all clients
+[ ] ...except sender
 [ ] pass along sender info as well as the message
 [ ] add data structure to keep track of users
+[ ] handle clients quitting more gracefully - broken pipe on line 56
+[ ] refactor: move masterQueue to attribute on MasterSender
 '''
 
 import sys
@@ -29,21 +32,23 @@ masterQueue = Queue.Queue()
 # DEFINE MASTER SENDER
 class MasterSender(threading.Thread):
     ''' Pull messages off the masterQueue and send to all clients. '''
-    def __init__(self, queue):
+    def __init__(self, queue, activeClients):
         threading.Thread.__init__(self)
         self.queue = queue
+        self.activeClients = activeClients
 
     def run(self):
         if DEBUG: print "You just initialized a master sender."
         while True:
-            try:
-                print "MESSAGE:", masterQueue.get()
-            except Empty:
-                pass
+            message = self.queue.get()
+            for _, client in self.activeClients.iteritems():
+                client.send(message)
+
 
 # DEFINE MESSAGE PUTTER (from user -> masterQueue)
 class Putter(threading.Thread):
     ''' Get messages from user and put on masterQueue. '''
+
     def __init__(self, queue, sock):
         threading.Thread.__init__(self)
         self.queue = queue
@@ -69,13 +74,15 @@ def recv_all(sock, length):
 
     data = ''
     more = sock.recv(length)
-    if not more:
-        raise EOFError('socket closed %d chars into a %d-char message' % (len(data), length))
     data += more
+
     return data
 
 
 def main():
+
+    activeClients = {}
+
     try:
         # initialize passive socket at PORT
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -83,7 +90,7 @@ def main():
         s.bind((HOST, PORT))
 
         # TODO create master sender
-        ms = MasterSender(masterQueue)
+        ms = MasterSender(masterQueue, activeClients)
         ms.setDaemon(True) # ?
         ms.start()
 
@@ -95,6 +102,7 @@ def main():
             c = Putter(masterQueue, sock)
             c.setDaemon(True)
             c.start()
+            activeClients[sock.fileno()] = sock
 
     except KeyboardInterrupt:
         sc.send('!!! Server shutting down.\n')
