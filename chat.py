@@ -4,8 +4,8 @@
 '''
 TODO
 [x] implement master queue and boilerplate for sender method
-[ ] use child threads instead of objects
-[ ] get client messages onto the queue and just print out incoming messages
+[x] use child threads instead of objects
+[x] get client messages onto the queue and just print out incoming messages
 [ ] implement message sending to all clients except sender
 [ ] pass along sender info as well as the message
 [ ] add data structure to keep track of users
@@ -35,7 +35,11 @@ class MasterSender(threading.Thread):
 
     def run(self):
         if DEBUG: print "You just initialized a master sender."
-
+        while True:
+            try:
+                print "MESSAGE:", masterQueue.get()
+            except Empty:
+                pass
 
 # DEFINE MESSAGE PUTTER (from user -> masterQueue)
 class Putter(threading.Thread):
@@ -47,12 +51,18 @@ class Putter(threading.Thread):
 
     def run(self):
         print "You just initialized a client object", self.sock.getpeername()
+        while True:
+            self.sock.send('> ') # client's chat prompt
+            message = recv_all(self.sock, 1000)
+            # print 'putting message', message, 'from', self.sock.getpeername()
+            masterQueue.put(message)
 
 
 # DEFINE MESSAGE GETTER
 class Getter(threading.Thread):
     ''' Pulls messages from this client's queue and sends to user. '''
     pass
+
 
 def recv_all(sock, length):
     ''' Receives the first 'length' chars of a message from 'sock'. '''
@@ -85,13 +95,6 @@ def main():
             c = Putter(masterQueue, sock)
             c.setDaemon(True)
             c.start()
-
-
-        # TODO MOVE THIS INTO CHILD THREAD
-        while True:
-            sc.send('> ') # client's chat prompt
-            message = recv_all(sc, 1000)
-            print '%s says: %s' % (sc.getpeername(), str(message))
 
     except KeyboardInterrupt:
         sc.send('!!! Server shutting down.\n')
