@@ -7,11 +7,14 @@ TODO
 [x] use child threads instead of objects
 [x] get client messages onto the queue and just print out incoming messages
 [x] implement message sending to all clients
-[ ] ...except sender
-[ ] pass along sender info as well as the message
-[ ] add data structure to keep track of users
+[-] add data structure to keep track of users
+[ ]     add Message class: contains port, text, nickname, date.
+[ ]     Add nickname to Putter init function
+[ ]     don't send me my own message
+[ ]     pass along sender info as well as the message
 [ ] handle clients quitting more gracefully - broken pipe on line 56
 [ ] refactor: move masterQueue to attribute on MasterSender
+[ ] "there are X other users"
 '''
 
 import sys
@@ -53,13 +56,16 @@ class Putter(threading.Thread):
         threading.Thread.__init__(self)
         self.queue = queue
         self.sock = sock
+        self.nickname = ''
 
     def run(self):
-        print "You just initialized a client object", self.sock.getpeername()
+        self.sock.send('What\'s your handle? ')
+        self.nickname = recv_all(self.sock, 50).strip()
+
+        print "%s has just signed in on port %s." % (self.nickname, self.sock.getpeername())
         while True:
             self.sock.send('> ') # client's chat prompt
             message = recv_all(self.sock, 1000)
-            # print 'putting message', message, 'from', self.sock.getpeername()
             masterQueue.put(message)
 
 
@@ -105,9 +111,10 @@ def main():
             activeClients[sock.fileno()] = sock
 
     except KeyboardInterrupt:
-        sc.send('!!! Server shutting down.\n')
+        # this is broken, will fix later
+        # sc.send('!!! Server shutting down.\n')
         print "\nKthxbai, shutting down servers."
-        sc.close()
+        # sc.close()
 
 if __name__ == '__main__':
     main()
