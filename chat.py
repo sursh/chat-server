@@ -10,11 +10,12 @@ TODO
 [-] add data structure to keep track of users
 [x]     add Message class: contains port, text, nickname, date.
 [x]     Add nickname to Putter init function
-[ ]     don't send me my own message
+[x]     don't send me my own message
 [x]     pass along sender info as well as the message
-[ ] handle clients quitting more gracefully - broken pipe on line 56
+[ ]     display sender name to other clients
+[ ] display "there are X other users" when you log in
 [ ] refactor: move masterQueue to attribute on MasterSender
-[ ] "there are X other users"
+[ ] handle clients quitting more gracefully - broken pipe on line 56
 '''
 
 import sys
@@ -42,14 +43,14 @@ class MasterSender(threading.Thread):
         self.activeClients = activeClients
 
     def run(self):
-        if DEBUG: print "You just initialized a master sender."
         broadcast = ''
-
         while True:
             message = self.queue.get()
-            for _, client in self.activeClients.iteritems():
-                broadcast = "%s: %s" % (message.nickname, message.body)
-                client.send(broadcast)
+            for (_id, clientsock) in self.activeClients.iteritems():
+                # don't send me back my own message
+                if message.address != clientsock.getpeername():
+                    broadcast = "%s: %s" % (message.nickname, message.body)
+                    clientsock.send(broadcast)
 
 
 # DEFINE MESSAGE PUTTER (from user -> masterQueue)
@@ -70,17 +71,18 @@ class Putter(threading.Thread):
         while True:
             self.sock.send('> ') # client's chat prompt
             body = recv_all(self.sock, 1000)
-            masterQueue.put(Message(self.nickname, body))
+            masterQueue.put(Message(self.nickname, body, self.sock))
 
 
 class Message():
     ''' Individual chat messages from users. '''
 
-    def __init__(self, nickname, body):
+    def __init__(self, nickname, body, sock):
         ''' Sending the nickname with the message, instead of a server-side lookup,
             in case a client leaves before their message is served to the other clients. '''
-        self.nickname = nickname
-        self.body     = body
+        self.nickname    = nickname
+        self.body        = body
+        self.address     = sock.getpeername()
 
 
 # DEFINE MESSAGE GETTER
