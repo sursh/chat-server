@@ -8,10 +8,10 @@ TODO
 [x] get client messages onto the queue and just print out incoming messages
 [x] implement message sending to all clients
 [-] add data structure to keep track of users
-[ ]     add Message class: contains port, text, nickname, date.
-[ ]     Add nickname to Putter init function
+[x]     add Message class: contains port, text, nickname, date.
+[x]     Add nickname to Putter init function
 [ ]     don't send me my own message
-[ ]     pass along sender info as well as the message
+[x]     pass along sender info as well as the message
 [ ] handle clients quitting more gracefully - broken pipe on line 56
 [ ] refactor: move masterQueue to attribute on MasterSender
 [ ] "there are X other users"
@@ -21,6 +21,7 @@ import sys
 import socket
 import Queue
 import threading
+import datetime
 
 HOST = '127.0.0.1'
 PORT = 1060
@@ -42,10 +43,13 @@ class MasterSender(threading.Thread):
 
     def run(self):
         if DEBUG: print "You just initialized a master sender."
+        broadcast = ''
+
         while True:
             message = self.queue.get()
             for _, client in self.activeClients.iteritems():
-                client.send(message)
+                broadcast = "%s: %s" % (message.nickname, message.body)
+                client.send(broadcast)
 
 
 # DEFINE MESSAGE PUTTER (from user -> masterQueue)
@@ -65,8 +69,18 @@ class Putter(threading.Thread):
         print "%s has just signed in on port %s." % (self.nickname, self.sock.getpeername())
         while True:
             self.sock.send('> ') # client's chat prompt
-            message = recv_all(self.sock, 1000)
-            masterQueue.put(message)
+            body = recv_all(self.sock, 1000)
+            masterQueue.put(Message(self.nickname, body))
+
+
+class Message():
+    ''' Individual chat messages from users. '''
+
+    def __init__(self, nickname, body):
+        ''' Sending the nickname with the message, instead of a server-side lookup,
+            in case a client leaves before their message is served to the other clients. '''
+        self.nickname = nickname
+        self.body     = body
 
 
 # DEFINE MESSAGE GETTER
