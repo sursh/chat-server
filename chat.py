@@ -12,10 +12,11 @@ TODO
 [x]     Add nickname to Putter init function
 [x]     don't send me my own message
 [x]     pass along sender info as well as the message
-[ ]     display sender name to other clients
 [ ] display "there are X other users" when you log in
 [ ] refactor: move masterQueue to attribute on MasterSender
 [ ] handle clients quitting more gracefully - broken pipe on line 56
+[ ] bug: list of activeClients only grows - they are never removed.
+[ ] bug: one client quitting fundamentally breaks everything. server is still running but new messages don't get through
 '''
 
 import sys
@@ -37,6 +38,7 @@ masterQueue = Queue.Queue()
 # DEFINE MASTER SENDER
 class MasterSender(threading.Thread):
     ''' Pull messages off the masterQueue and send to all clients. '''
+
     def __init__(self, queue, activeClients):
         threading.Thread.__init__(self)
         self.queue = queue
@@ -57,14 +59,15 @@ class MasterSender(threading.Thread):
 class Putter(threading.Thread):
     ''' Get messages from user and put on masterQueue. '''
 
-    def __init__(self, queue, sock):
+    def __init__(self, queue, sock, usercount):
         threading.Thread.__init__(self)
         self.queue = queue
         self.sock = sock
         self.nickname = ''
+        self.usercount = usercount
 
     def run(self):
-        self.sock.send('What\'s your handle? ')
+        self.sock.send('There are %d users already chatting. \nYour handle: ' % self.usercount)
         self.nickname = recv_all(self.sock, 50).strip()
 
         print "%s has just signed in on port %s." % (self.nickname, self.sock.getpeername())
@@ -113,7 +116,7 @@ def main():
 
         # TODO create master sender
         ms = MasterSender(masterQueue, activeClients)
-        ms.setDaemon(True) # ?
+        ms.setDaemon(True)
         ms.start()
 
         while True:
@@ -121,7 +124,7 @@ def main():
             print 'Listening for connections at', s.getsockname()
 
             sock, sockname = s.accept()
-            c = Putter(masterQueue, sock)
+            c = Putter(masterQueue, sock, len(activeClients))
             c.setDaemon(True)
             c.start()
             activeClients[sock.fileno()] = sock
