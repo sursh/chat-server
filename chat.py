@@ -12,7 +12,7 @@ TODO
 [x]     Add nickname to Putter init function
 [x]     don't send me my own message
 [x]     pass along sender info as well as the message
-[ ] display "there are X other users" when you log in
+[x] display "there are X other users" when you log in
 [ ] refactor: move masterQueue to attribute on MasterSender
 [ ] handle clients quitting more gracefully - broken pipe on line 56
 [ ] bug: list of activeClients only grows - they are never removed.
@@ -28,14 +28,12 @@ import datetime
 HOST = '127.0.0.1'
 PORT = 1060
 NUM_CLIENTS = 10
+MSG_SIZE = 4096
 
 DEBUG = True
 
-# Message queue from all clients
 masterQueue = Queue.Queue()
 
-
-# DEFINE MASTER SENDER
 class MasterSender(threading.Thread):
     ''' Pull messages off the masterQueue and send to all clients. '''
 
@@ -55,25 +53,24 @@ class MasterSender(threading.Thread):
                     clientsock.send(broadcast)
 
 
-# DEFINE MESSAGE PUTTER (from user -> masterQueue)
 class Putter(threading.Thread):
     ''' Get messages from user and put on masterQueue. '''
 
     def __init__(self, queue, sock, usercount):
         threading.Thread.__init__(self)
-        self.queue = queue
+        self.queue = queue # master queue
         self.sock = sock
         self.nickname = ''
         self.usercount = usercount
 
     def run(self):
         self.sock.send('There are %d users already chatting. \nYour handle: ' % self.usercount)
-        self.nickname = recv_all(self.sock, 50).strip()
-
+        self.nickname = recv_all(self.sock).strip()
         print "%s has just signed in on port %s." % (self.nickname, self.sock.getpeername())
+
         while True:
             self.sock.send('> ') # client's chat prompt
-            body = recv_all(self.sock, 1000)
+            body = recv_all(self.sock)
             masterQueue.put(Message(self.nickname, body, self.sock))
 
 
@@ -88,20 +85,11 @@ class Message():
         self.address     = sock.getpeername()
 
 
-# DEFINE MESSAGE GETTER
-class Getter(threading.Thread):
-    ''' Pulls messages from this client's queue and sends to user. '''
-    pass
-
-
-def recv_all(sock, length):
+def recv_all(sock):
     ''' Receives the first 'length' chars of a message from 'sock'. '''
 
-    data = ''
-    more = sock.recv(length)
-    data += more
-
-    return data
+    message = sock.recv(MSG_SIZE)
+    return message
 
 
 def main():
