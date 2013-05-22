@@ -109,12 +109,11 @@ def main():
     activeClients = {}
 
     try:
-        # initialize passive socket at PORT
+        # initialize passive/listening socket at PORT
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, NUM_CLIENTS)
         s.bind((HOST, PORT))
 
-        # TODO create master sender
         ms = MasterSender(masterQueue, activeClients)
         ms.setDaemon(True)
         ms.start()
@@ -130,10 +129,10 @@ def main():
             activeClients[sock.fileno()] = sock
 
     except KeyboardInterrupt:
-        # this is broken, will fix later
-        # sc.send('!!! Server shutting down.\n')
-        print "\nKthxbai, shutting down servers."
-        # sc.close()
+        print "\nKthxbai, closing sockets."
+        for sock in activeClients.values():
+            sock.send('\nSorry, server shutting down now.\n')
+            sock.close()
 
 if __name__ == '__main__':
     main()
