@@ -1,22 +1,11 @@
 #!/usr/bin/env python
-# working on a simple chat client
+# Sasha Laundy, 2013
 
 '''
-TODO
-[x] implement master queue and boilerplate for sender method
-[x] use child threads instead of objects
-[x] get client messages onto the queue and just print out incoming messages
-[x] implement message sending to all clients
-[-] add data structure to keep track of users
-[x]     add Message class: contains port, text, nickname, date.
-[x]     Add nickname to Putter init function
-[x]     don't send me my own message
-[x]     pass along sender info as well as the message
-[x] display "there are X other users" when you log in
-[ ] refactor: move masterQueue to attribute on MasterSender
-[ ] handle clients quitting more gracefully - broken pipe on line 56
-[ ] bug: list of activeClients only grows - they are never removed.
-[ ] bug: one client quitting fundamentally breaks everything. server is still running but new messages don't get through
+
+Simple Python chat server with threads and queues.
+See README for lots more info.
+
 '''
 
 import sys
