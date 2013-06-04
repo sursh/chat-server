@@ -16,10 +16,7 @@ import datetime
 
 HOST = '127.0.0.1'
 PORT = 1060
-NUM_CLIENTS = 10
 MSG_SIZE = 4096
-
-DEBUG = True
 
 masterQueue = Queue.Queue()
 
@@ -88,7 +85,7 @@ def main():
     try:
         # initialize passive/listening socket at PORT
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, NUM_CLIENTS)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((HOST, PORT))
 
         ms = MasterSender(masterQueue, activeClients)
@@ -96,7 +93,7 @@ def main():
         ms.start()
 
         while True:
-            s.listen(NUM_CLIENTS)
+            s.listen(100)
             print 'Listening for connections at', s.getsockname()
 
             sock, sockname = s.accept()
